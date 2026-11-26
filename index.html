@@ -116,13 +116,10 @@ textarea:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 <div class="card" id="shbox" hidden>
 <h2>Bagikan Bikimao</h2>
 <label for="shurl">Tautan (alamat publik Bikimao)</label>
-<div class="wa" style="margin-top:0"><input id="shurl" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://username.github.io/bikimao"><button class="btn sm" id="shcopy" type="button">Salin Link</button></div>
+<div class="wa" style="margin-top:0"><input id="shurl" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://bikimao.github.io/bikimao/"><button class="btn sm" id="shcopy" type="button">Salin Link</button></div>
 <small id="shh" style="color:var(--mute);display:block;margin-top:6px"></small>
-<label for="shtx" style="margin-top:14px">Teks ajakan (sudah berisi tautan)</label>
-<textarea id="shtx" readonly rows="3"></textarea>
-<div class="wa"><button class="btn sm" id="shcopy2" type="button">Salin Teks &amp; Link</button><button class="btn ghost sm" id="shnative" type="button" hidden>Bagikan lewat aplikasi lain</button></div>
+<div class="wa"><button class="btn ghost sm" id="shnative" type="button" hidden>Bagikan lewat aplikasi lain</button></div>
 <small id="shm" role="status" aria-live="polite" style="color:var(--mute);display:block;margin-top:8px;min-height:1.4em"></small>
-<small style="color:var(--mute);display:block">Data keuangan disimpan di browser masing-masing, jadi penerima tautan tidak melihat data Anda dan data tidak saling menimpa.</small>
 </div>
 <div id="viewM">
 <section class="hero" aria-label="Ringkasan bulan ini">
@@ -137,7 +134,7 @@ textarea:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 </div>
 <div class="income">
 <div><label for="inc">Pemasukan per bulan (Rp)</label><input id="inc" class="money" inputmode="numeric" placeholder="contoh: 5.000.000"></div>
-<button class="btn ghost" id="auto" type="button">Bagi otomatis ke amplop</button>
+
 </div>
 </section>
 
@@ -228,7 +225,6 @@ textarea:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 </main>
 <script>
 const CATS=[["makan","Makan dan minum"],["rumah","Sewa kos"],["transport","Transportasi"],["utilitas","Listrik, air, internet"],["sehat","Kesehatan"],["darurat","Dana Darurat"],["tabung","Tabungan"]];
-const FIXED={rumah:525000,transport:300000,utilitas:596825,sehat:300000},FT=1721825;
 const nf=n=>new Intl.NumberFormat("id-ID").format(Math.round(n));
 const fmt=n=>(n<0?"-":"")+"Rp "+nf(Math.abs(n));
 const num=v=>parseInt(String(v).replace(/\D/g,""),10)||0;
@@ -251,19 +247,13 @@ function rebalance(x){
   x.budgets.darurat=Math.round(pool*0.6);
   x.budgets.tabung=pool-x.budgets.darurat;
 }
-function autoAlloc(x){
-  Object.assign(x.budgets,FIXED);
-  const rem=Math.max(0,x.income-FT);
-  x.budgets.makan=Math.round(rem*0.45);
-  rebalance(x);
-}
 const active=m=>{const x=DB.months[m];return !!x&&(x.income>0||x.tx.length>0||x.inc2.length>0||x.ef0!=null||x.sv0!=null)};
 const prevKey=m=>Object.keys(DB.months).filter(k=>k<m&&active(k)).sort().pop();
 function ensure(m){
   if(!DB.months[m]){
     const x=blank();DB.months[m]=x;
     const p=prevKey(m);
-    if(p&&DB.months[p].income>0){x.income=DB.months[p].income;autoAlloc(x)}
+    if(p&&DB.months[p].income>0){x.income=DB.months[p].income;x.budgets=Object.assign({},DB.months[p].budgets);rebalance(x)}
     save();
   }
   return DB.months[m];
@@ -294,7 +284,7 @@ try{
       const f=DB.months[sorted[0]];
       f.income=o.income||0;f.budgets=o.budgets||{};
       f.ef0=o.efund!=null?o.efund:null;f.sv0=o.saved0!=null?o.saved0:null;
-      sorted.slice(1).forEach(k=>{const y=DB.months[k];y.income=f.income;if(y.income>0)autoAlloc(y)});
+      sorted.slice(1).forEach(k=>{const y=DB.months[k];y.income=f.income;y.budgets=Object.assign({},f.budgets);rebalance(y)});
       save();
     }
   }
@@ -310,11 +300,6 @@ $("mon").onchange=e=>{if(e.target.value){month=e.target.value;render()}};
 $("inc").onchange=e=>{const x=ensure(month);x.income=num(e.target.value);rebalance(x);save();render()};
 $("ef0").onchange=e=>{const x=ensure(month),r=e.target.value.trim();x.ef0=r===""?null:num(r);save();render()};
 $("sv0").onchange=e=>{const x=ensure(month),r=e.target.value.trim();x.sv0=r===""?null:num(r);save();render()};
-$("auto").onclick=()=>{
-  const x=ensure(month);
-  if(!x.income){$("inc").focus();return}
-  autoAlloc(x);save();render();
-};
 $("form").onsubmit=e=>{
   e.preventDefault();
   const amt=num($("amt").value);if(!amt)return;
@@ -423,15 +408,15 @@ const BLN=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","S
 
 function yearRows(y){
   const keys=Object.keys(DB.months).filter(k=>k<y+"-01"&&active(k)).sort();
-  let ef=0,sv=0,last=0;
-  if(keys.length){const p=keys[keys.length-1];ef=close(p,"ef");sv=close(p,"sv");last=DB.months[p].income||0}
+  let ef=0,sv=0,last=0,lastB={};
+  if(keys.length){const p=keys[keys.length-1];ef=close(p,"ef");sv=close(p,"sv");last=DB.months[p].income||0;lastB=Object.assign({},DB.months[p].budgets)}
   const rows=[];
   for(let i=1;i<=12;i++){
     const m=y+"-"+pad(i),real=active(m);
     let x;
     if(real)x=DB.months[m];
-    else{x=blank();x.income=last;if(x.income>0)autoAlloc(x)}
-    if(x.income>0)last=x.income;
+    else{x=blank();x.income=last;x.budgets=Object.assign({},lastB);rebalance(x)}
+    if(x.income>0){last=x.income;lastB=Object.assign({},x.budgets)}
     const ex=exSum(x,"amt"),spent=x.tx.reduce((a,t)=>a+t.amt,0);
     const be=x.ef0!=null?x.ef0:ef,bs=x.sv0!=null?x.sv0:sv;
     const ad=bud(x,"darurat"),at=bud(x,"tabung");
@@ -629,24 +614,21 @@ function renderWish(){
   });
 }
 
-const SHARE_DESC="Bikimao \u2014 Keuangan Kebutuhan Hidup. Atur amplop anggaran, dana darurat, tabungan, dan target barang.";
+const DEFAULT_URL="https://bikimao.github.io/bikimao/";
 const SKEY="bikimao-share-url";
 const okUrl=u=>{try{const x=new URL(u);return x.protocol==="http:"||x.protocol==="https:"}catch(e){return false}};
-/* alamat halaman dipakai hanya jika http(s); about:srcdoc, blob:, file: diabaikan */
-const HERE=/^https?:\/\//i.test(location.href)?location.href.split("#")[0]:"";
 let SAVED="";try{SAVED=localStorage.getItem(SKEY)||""}catch(e){}
 if(!okUrl(SAVED))SAVED="";
-let U=SAVED||HERE;
+let U=SAVED||DEFAULT_URL;
 function refreshShare(msg){
-  $("shtx").value=SHARE_DESC+(U?" Coba di: "+U:"");
-  ["shcopy","shcopy2","shnative"].forEach(id=>$(id).disabled=!U);
-  $("shh").textContent=msg||(U?(SAVED?"Memakai alamat yang Anda simpan. Kosongkan kotak untuk kembali ke alamat halaman ini.":"Memakai alamat halaman ini."):"Halaman ini belum punya alamat publik. Ketik alamat publik Bikimao Anda (diawali http:// atau https://) di kotak Tautan, lalu otomatis tersimpan di browser ini.");
+  ["shcopy","shnative"].forEach(id=>$(id).disabled=!U);
+  $("shh").textContent=msg||(SAVED?"Memakai alamat yang Anda simpan. Kosongkan kotak untuk kembali ke alamat bawaan.":"Alamat bawaan Bikimao. Anda bisa menggantinya dengan alamat lain.");
 }
 $("shurl").value=U;
 $("shurl").oninput=()=>{
   const v=$("shurl").value.trim();
   $("shm").textContent="";
-  if(v===""){SAVED="";try{localStorage.removeItem(SKEY)}catch(e){}U=HERE;refreshShare()}
+  if(v===""){SAVED="";try{localStorage.removeItem(SKEY)}catch(e){}U=DEFAULT_URL;refreshShare()}
   else if(okUrl(v)){SAVED=v;try{localStorage.setItem(SKEY,v)}catch(e){}U=v;refreshShare()}
   else{U="";refreshShare("Alamat harus diawali http:// atau https://.")}
 };
@@ -662,9 +644,12 @@ async function copyText(text,el){
   return false;
 }
 const HINT="Teks sudah dipilih. Tekan dan tahan, lalu pilih Salin (Copy).";
-$("shcopy").onclick=async()=>{if(U)$("shm").textContent=(await copyText(U,$("shurl")))?"Link berhasil disalin!":HINT};
-$("shcopy2").onclick=async()=>{if(U)$("shm").textContent=(await copyText($("shtx").value,$("shtx")))?"Teks dan link berhasil disalin!":HINT};
-$("shnative").onclick=async()=>{if(U){try{await navigator.share({title:"Bikimao",text:SHARE_DESC,url:U})}catch(e){}}};
+$("shcopy").onclick=async()=>{
+  if(!U)return;
+  $("shurl").value=U;
+  $("shm").textContent=(await copyText(U,$("shurl")))?"Link berhasil disalin!":HINT;
+};
+$("shnative").onclick=async()=>{if(U){try{await navigator.share({url:U})}catch(e){}}};
 $("shareBtn").onclick=()=>{
   const b=$("shbox");b.hidden=!b.hidden;
   $("shareBtn").setAttribute("aria-expanded",String(!b.hidden));
