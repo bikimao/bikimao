@@ -2,8 +2,8 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
-<title>Bikimao — Keuangan Kebutuhan Hidup</title>
-<meta name="description" content="Bikimao: atur amplop anggaran, dana darurat, tabungan, dan target barang. Data tersimpan di browser Anda.">
+<title>BIKIMAO APK KEUANGAN 💸</title>
+<meta name="description" content="bikimao apk keuangan: atur amplop anggaran, dana darurat, tabungan, dan target barang. Data tersimpan di browser Anda.">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%E2%9C%89%EF%B8%8F%3C/text%3E%3C/svg%3E">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -104,18 +104,18 @@ textarea:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 <body>
 <main>
 <header>
-<h1>Bikimao</h1>
+<h1>BIKIMAO APK KEUANGAN 💸</h1>
 <div style="width:170px"><label for="mon" class="sr" style="position:absolute;left:-9999px">Bulan</label><input type="month" id="mon"></div>
 </header>
 <nav class="tabs" aria-label="Tampilan">
 <button class="tab" id="tabM" type="button" aria-pressed="true">Bulanan</button>
 <button class="tab" id="tabY" type="button" aria-pressed="false">Mutasi Tahunan</button>
 <button class="tab" id="tabW" type="button" aria-pressed="false">Target Barang</button>
-<button class="tab" id="shareBtn" type="button" style="margin-left:auto">Bagikan Bikimao</button>
+<button class="tab" id="shareBtn" type="button" style="margin-left:auto">Bagikan bikimao apk keuangan</button>
 </nav>
 <div class="card" id="shbox" hidden>
-<h2>Bagikan Bikimao</h2>
-<label for="shurl">Tautan (alamat publik Bikimao)</label>
+<h2>Bagikan bikimao apk keuangan</h2>
+<label for="shurl">Tautan (alamat publik bikimao apk keuangan)</label>
 <div class="wa" style="margin-top:0"><input id="shurl" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://bikimao.github.io/bikimao/"><button class="btn sm" id="shcopy" type="button">Salin Link</button></div>
 <small id="shh" style="color:var(--mute);display:block;margin-top:6px"></small>
 <div class="wa"><button class="btn ghost sm" id="shnative" type="button" hidden>Bagikan lewat aplikasi lain</button></div>
@@ -622,7 +622,7 @@ if(!okUrl(SAVED))SAVED="";
 let U=SAVED||DEFAULT_URL;
 function refreshShare(msg){
   ["shcopy","shnative"].forEach(id=>$(id).disabled=!U);
-  $("shh").textContent=msg||(SAVED?"Memakai alamat yang Anda simpan. Kosongkan kotak untuk kembali ke alamat bawaan.":"Alamat bawaan Bikimao. Anda bisa menggantinya dengan alamat lain.");
+  $("shh").textContent=msg||(SAVED?"Memakai alamat yang Anda simpan. Kosongkan kotak untuk kembali ke alamat bawaan.":"Alamat bawaan bikimao apk keuangan. Anda bisa menggantinya dengan alamat lain.");
 }
 $("shurl").value=U;
 $("shurl").oninput=()=>{
