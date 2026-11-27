@@ -186,6 +186,20 @@ body:not(.locked) #landing{display:none}
 .lcard input:focus-visible{outline:2px solid #386624;outline-offset:1px}
 .acts{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .lmsg.err{background:#FBEAE8;border:1px solid #F0C4BF;border-radius:8px;padding:8px 10px;text-align:left}
+.lrow{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:6px}
+.llink{background:none;border:0;color:#1b4320;text-decoration:underline;cursor:pointer;font-weight:600;padding:8px 4px;min-height:40px}
+.llink:focus-visible{outline:2px solid #386624;outline-offset:2px}
+.lh{font-weight:800;font-size:1.05rem;margin-bottom:4px}
+.lmsg.ok{color:#1b4320;font-weight:600}
+.idinfo{margin:10px 0 0}
+.idl{list-style:none;margin:8px 0 0;padding:0;max-height:220px;overflow:auto;border:1px solid #E1E8E3;border-radius:10px}
+.idl:empty{display:none}
+.idl li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 10px;border-top:1px solid #E1E8E3}
+.idl li:first-child{border-top:0}
+.idl li span{min-width:0;overflow-wrap:anywhere;font-weight:600}
+.lsm{background:#1b4320;color:#fff;border:0;border-radius:8px;padding:6px 12px;min-height:36px;font-weight:700;cursor:pointer;white-space:nowrap}
+.lsm:hover{background:#386624}
+.lsm:focus-visible{outline:2px solid #86B36E;outline-offset:2px}
 </style>
 </head>
 <body class="locked">
@@ -205,6 +219,28 @@ body:not(.locked) #landing{display:none}
 <input id="lpw" type="password" autocomplete="current-password">
 <button class="lbtn" id="lgo" type="submit">Masuk</button>
 </form>
+<div class="lrow" id="lrow"><button class="llink" id="lfpw" type="button">Lupa Password?</button><button class="llink" id="lfid" type="button">Lupa ID Akun?</button></div>
+<form class="lf" id="fpw" novalidate hidden>
+<div class="lh">Lupa Password</div>
+<label for="pid">ID Akun yang ingin dipulihkan</label>
+<input id="pid" autocomplete="off" autocapitalize="off" spellcheck="false">
+<div id="pstep2" hidden>
+<label for="pnw">Password Baru (minimal 6 karakter)</label>
+<input id="pnw" type="password" autocomplete="new-password">
+<label for="pnw2">Konfirmasi Password Baru</label>
+<input id="pnw2" type="password" autocomplete="new-password">
+</div>
+<button class="lbtn" id="pgo" type="submit">Cari Akun</button>
+<div class="lrow"><button class="llink" id="pback" type="button">Kembali ke Masuk</button></div>
+</form>
+<div class="lf" id="fid" hidden>
+<div class="lh">Lupa ID Akun</div>
+<div id="qwrap"><label for="qid">Cari ID Akun</label><input id="qid" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Ketik sebagian ID"></div>
+<p class="lnote idinfo" id="idinfo"></p>
+<ul class="idl" id="idlist"></ul>
+<button class="lbtn" id="gotoup" type="button" hidden>Buat Akun Baru</button>
+<div class="lrow"><button class="llink" id="idback" type="button">Kembali ke Masuk</button></div>
+</div>
 <form class="lf" id="fup" novalidate hidden>
 <label for="rid">ID Akun (bebas: huruf, angka, kapital, dll.)</label>
 <input id="rid" autocomplete="username" autocapitalize="off" spellcheck="false">
@@ -349,7 +385,7 @@ body:not(.locked) #landing{display:none}
 <div class="note">Saldo Dana Darurat dan Tabungan berlanjut dari bulan sebelumnya; saldo awal bisa Anda koreksi manual.</div>
 <div class="note">Seluruh data disimpan dan dikelola lewat akun ID &amp; Password yang Anda buat di browser ini. Data tiap akun terpisah, tidak dikirim ke server mana pun, dan password disimpan sebagai hash, bukan teks biasa.</div>
 <div class="note">Akun terikat pada browser dan perangkat ini. Akun tidak muncul di browser atau perangkat lain, dan menghapus data situs browser akan menghapus akun beserta datanya.</div>
-<div class="note">Password tidak bisa direset. Jika lupa, akun dan datanya tidak bisa dibuka; buat akun baru dengan ID lain.</div>
+<div class="note">Lupa password atau ID? Pakai <b>Lupa Password?</b> (cukup dengan ID Akun) atau <b>Lupa ID Akun?</b> (daftar ID yang tersimpan) di layar masuk. Pemulihan hanya berlaku untuk akun yang tersimpan di browser dan perangkat ini, dan data keuangan tidak terhapus saat password diganti. Karena itu siapa pun yang bisa membuka browser ini bisa memakainya, jadi hindari perangkat bersama.</div>
 </section>
 </div>
 <section id="viewY" hidden>
@@ -905,7 +941,7 @@ async function hashPw(pw,salt,iter){
   return b64(await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:unb64(salt),iterations:iter},k,256));
 }
 const newSalt=()=>b64(crypto.getRandomValues(new Uint8Array(16)));
-const say=(t,err)=>{$("lmsg").className="lmsg"+(err&&t?" err":"");$("lmsg").textContent=t||"";if(err&&t){try{$("lmsg").scrollIntoView({block:"nearest"})}catch(e){}}};
+const say=(t,err,ok)=>{$("lmsg").className="lmsg"+(err&&t?" err":ok&&t?" ok":"");$("lmsg").textContent=t||"";if(err&&t){try{$("lmsg").scrollIntoView({block:"nearest"})}catch(e){}}};
 function setStatus(cls,text){const el=$("syncst");el.className="sync"+(cls?" "+cls:"");el.textContent=text}
 function setAcct(){
   $("acname").textContent=ACC;
@@ -926,11 +962,74 @@ function enterAccount(id){
   startApp();
 }
 function lmode(m){
-  $("fin").hidden=m!=="in";$("fup").hidden=m!=="up";
+  $("fin").hidden=m!=="in";$("lrow").hidden=m!=="in";
+  $("fup").hidden=m!=="up";$("fpw").hidden=m!=="pw";$("fid").hidden=m!=="id";
   $("ltabIn").setAttribute("aria-pressed",String(m==="in"));
   $("ltabUp").setAttribute("aria-pressed",String(m==="up"));
   say("");
+  if(m==="pw")resetPw();
+  if(m==="id"){$("qid").value="";renderIds()}
 }
+/* lupa password: cukup dengan ID Akun yang tersimpan di browser ini */
+let pwKey="";
+function resetPw(){pwKey="";$("pstep2").hidden=true;$("pnw").value="";$("pnw2").value="";$("pgo").textContent="Cari Akun"}
+$("pid").oninput=()=>{if(pwKey){resetPw();say("")}};
+$("lfpw").onclick=()=>{const v=$("lid").value;lmode("pw");$("pid").value=v};
+$("pback").onclick=()=>lmode("in");
+$("fpw").onsubmit=async e=>{
+  e.preventDefault();
+  const btn=$("pgo");
+  if(!pwKey){
+    const id=cleanId($("pid").value);
+    if(!id)return say("ID Akun belum diisi.",true);
+    const k=findKey(getAcc(),id);
+    if(!k)return say('ID Akun "'+id+'" belum terdaftar di browser ini. Pemulihan hanya berlaku untuk akun yang tersimpan di browser ini. Cek lewat "Lupa ID Akun?" atau buat akun baru.',true);
+    pwKey=k;$("pid").value=k;$("pstep2").hidden=false;$("pgo").textContent="Simpan Password Baru";
+    say('Akun "'+k+'" ditemukan. Buat password baru; data keuangan tidak akan dihapus.',false,true);
+    try{$("pnw").focus()}catch(e){}
+    return;
+  }
+  const p1=$("pnw").value,p2=$("pnw2").value;
+  if(!p1)return say("Password baru belum diisi.",true);
+  if(p1.length<6)return say("Password baru minimal 6 karakter (sekarang baru "+p1.length+").",true);
+  if(p1!==p2)return say("Konfirmasi Password Baru tidak sama dengan Password Baru.",true);
+  btn.disabled=true;say("Menyimpan\u2026");
+  try{
+    const salt=newSalt(),hash=await hashPw(p1,salt,ITER),acc=getAcc(),k=pwKey;
+    if(!acc[k])say('Akun "'+k+'" tidak ditemukan lagi di browser ini.',true);
+    else{
+      acc[k]=Object.assign({},acc[k],{salt,iter:ITER,hash});
+      if(!putAcc(acc)||getAcc()[k].hash!==hash)say("Browser tidak mengizinkan penyimpanan data, sehingga password tidak berubah. Coba buka di browser biasa.",true);
+      else{lmode("in");$("lid").value=k;$("lpw").value="";say('Password akun "'+k+'" berhasil diperbarui. Silakan masuk dengan password baru.',false,true);try{$("lpw").focus()}catch(e){}}
+    }
+  }catch(err){say("Gagal memperbarui password: "+(err&&err.message||err),true)}
+  btn.disabled=false;
+};
+/* lupa ID akun: daftar ID yang tersimpan di browser ini */
+function renderIds(){
+  const ids=Object.keys(getAcc()).sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()));
+  const q=$("qid").value.trim().toLowerCase(),ul=$("idlist"),info=$("idinfo");
+  ul.innerHTML="";
+  if(!ids.length){
+    $("qwrap").hidden=true;$("gotoup").hidden=false;
+    info.textContent="Belum ada akun di browser ini. Buka tab Buat Akun Baru untuk membuat akun pertama Anda.";
+    return;
+  }
+  $("qwrap").hidden=false;$("gotoup").hidden=true;
+  const list=ids.filter(i=>i.toLowerCase().indexOf(q)>=0);
+  info.textContent=list.length?list.length+" dari "+ids.length+" akun di browser ini.":"Tidak ada ID yang cocok dengan pencarian.";
+  list.forEach(id=>{
+    const li=document.createElement("li");
+    li.innerHTML='<span></span><button class="lsm" type="button">Gunakan ID Ini</button>';
+    li.querySelector("span").textContent=id;
+    li.querySelector("button").onclick=()=>{lmode("in");$("lid").value=id;try{$("lpw").focus()}catch(e){}};
+    ul.appendChild(li);
+  });
+}
+$("lfid").onclick=()=>lmode("id");
+$("qid").oninput=renderIds;
+$("idback").onclick=()=>lmode("in");
+$("gotoup").onclick=()=>lmode("up");
 $("ltabIn").onclick=()=>lmode("in");
 $("ltabUp").onclick=()=>lmode("up");
 $("fin").onsubmit=async e=>{
