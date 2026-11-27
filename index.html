@@ -10,7 +10,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root{--paper:#F4F6F5;--surface:#FFFFFF;--ink:#16231E;--mute:#5F6F68;--line:#DDE3E0;--blue:#1B5E43;--blue-bg:#DDEBE3;--forest:#1B4D38;--amber:#A8690F;--red:#B3392F;--flap:#E8EEEA;--field:#F7F8F7;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root{--paper:#0E1512;--surface:#16201B;--ink:#E6EEE9;--mute:#97ABA2;--line:#27352E;--blue:#6CC79B;--blue-bg:#1E382C;--forest:#1F5A43;--amber:#E0A94B;--red:#EE7B70;--flap:#1F2C26;--field:#101914;color-scheme:dark}}
@@ -177,6 +176,16 @@ body:not(.locked) #landing{display:none}
 .sync.err::before{background:var(--red)}
 .sync.err{color:var(--red)}
 @media(min-width:900px){.acct{margin-top:auto}}
+.ltabs{display:flex;background:#EAF0EB;border-radius:10px;padding:4px;margin-bottom:14px}
+.ltab{flex:1;border:0;background:none;border-radius:8px;padding:9px 8px;min-height:40px;font-weight:700;color:#4F5F57;cursor:pointer}
+.ltab[aria-pressed="true"]{background:#fff;color:#1b4320;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.lf{text-align:left}
+.lf label{color:#4F5F57;margin:10px 0 4px}
+.lf .lbtn{margin-top:16px}
+.lcard input{background:#F7F8F7;color:#16231E;border:1px solid #CFDAD2}
+.lcard input:focus-visible{outline:2px solid #386624;outline-offset:1px}
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.lmsg.err{background:#FBEAE8;border:1px solid #F0C4BF;border-radius:8px;padding:8px 10px;text-align:left}
 </style>
 </head>
 <body class="locked">
@@ -185,11 +194,28 @@ body:not(.locked) #landing{display:none}
 <svg class="lemb" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#1B4320"/><rect x="14" y="34" width="9" height="16" rx="2" fill="#fff"/><rect x="28" y="26" width="9" height="24" rx="2" fill="#A9D18E"/><rect x="42" y="16" width="9" height="34" rx="2" fill="#fff"/></svg>
 <div class="ltl" id="ltitle">BIKIMAO APK KEUANGAN 💸</div>
 <p class="lsub">Catat Anggaran, Dana Darurat, Tabungan &amp; Target Barang</p>
-<button class="lbtn" id="lgoogle" type="button"><span class="lg" aria-hidden="true">G</span>Masuk dengan Google (Simpan ke Google Drive)</button>
-<div class="lor"><span>atau</span></div>
-<button class="lbtn2" id="llocal" type="button">Gunakan Mode Lokal (Tanpa Google Drive)</button>
+<div class="ltabs" role="group" aria-label="Masuk atau buat akun">
+<button class="ltab" id="ltabIn" type="button" aria-pressed="true">Masuk</button>
+<button class="ltab" id="ltabUp" type="button" aria-pressed="false">Buat Akun Baru</button>
+</div>
+<form class="lf" id="fin" novalidate>
+<label for="lid">ID Akun</label>
+<input id="lid" autocomplete="username" autocapitalize="off" spellcheck="false">
+<label for="lpw">Password</label>
+<input id="lpw" type="password" autocomplete="current-password">
+<button class="lbtn" id="lgo" type="submit">Masuk</button>
+</form>
+<form class="lf" id="fup" novalidate hidden>
+<label for="rid">ID Akun (bebas: huruf, angka, kapital, dll.)</label>
+<input id="rid" autocomplete="username" autocapitalize="off" spellcheck="false">
+<label for="rpw">Password (minimal 6 karakter)</label>
+<input id="rpw" type="password" autocomplete="new-password">
+<label for="rpw2">Konfirmasi Password</label>
+<input id="rpw2" type="password" autocomplete="new-password">
+<button class="lbtn" id="rgo" type="submit">Buat Akun</button>
+</form>
+<p class="lmsg" id="lmsg" role="alert" aria-live="assertive"></p>
 <p class="lnote" id="lhint"></p>
-<p class="lmsg" id="lmsg" role="status" aria-live="polite"></p>
 </div>
 </div>
 <div class="app">
@@ -213,8 +239,7 @@ body:not(.locked) #landing{display:none}
 <div class="acn" id="acname"></div>
 <div class="ace" id="acmail"></div>
 <div class="sync" id="syncst" role="status" aria-live="polite"></div>
-<button class="btn ghost sm" id="syncbtn" type="button" hidden>Masuk lagi</button>
-<button class="btn ghost sm" id="logout" type="button">Keluar</button>
+<button class="btn ghost sm" id="logout" type="button">Keluar / Ganti Akun</button>
 </div>
 </aside>
 <main class="main">
@@ -322,7 +347,9 @@ body:not(.locked) #landing{display:none}
 <div class="note">Sisa dana yang belum dialokasikan ke amplop kebutuhan otomatis masuk ke Dana Darurat dan Tabungan dengan rasio 60:40.</div>
 <div class="note">Target Dana Darurat 6 Bulan dihitung dari rata-rata pengeluaran pokok (di luar amplop Dana Darurat dan Tabungan) selama maksimal 6 bulan terakhir yang tercatat, dikali 6.</div>
 <div class="note">Saldo Dana Darurat dan Tabungan berlanjut dari bulan sebelumnya; saldo awal bisa Anda koreksi manual.</div>
-<div class="note">Seluruh data tersimpan di browser ini saja, tidak dikirim ke mana pun.</div>
+<div class="note">Seluruh data disimpan dan dikelola lewat akun ID &amp; Password yang Anda buat di browser ini. Data tiap akun terpisah, tidak dikirim ke server mana pun, dan password disimpan sebagai hash, bukan teks biasa.</div>
+<div class="note">Akun terikat pada browser dan perangkat ini. Akun tidak muncul di browser atau perangkat lain, dan menghapus data situs browser akan menghapus akun beserta datanya.</div>
+<div class="note">Password tidak bisa direset. Jika lupa, akun dan datanya tidak bisa dibuka; buat akun baru dengan ID lain.</div>
 </section>
 </div>
 <section id="viewY" hidden>
@@ -354,7 +381,7 @@ body:not(.locked) #landing{display:none}
 <div class="card">
 <h2>Target barang dari Tabungan</h2>
 <div class="stats" id="ws"></div>
-<small style="color:var(--mute);display:block;margin:10px 0 4px">Progress barang terisi otomatis dari Total Tabungan Terkumpul bulan yang dipilih: Prioritas sampai penuh lebih dulu, baru Jangka Panjang (urutan sama mengikuti waktu ditambahkan). Total Dana Darurat, Total Tabungan, dan Sisa uang bulan ini tidak berubah, kecuali barang selesai dicatat sebagai pengeluaran amplop Tabungan; dana itu lalu tidak ikut dibagi lagi ke target lain.</small>
+<small style="color:var(--mute);display:block;margin:10px 0 4px">Progress barang terisi otomatis dari Total Tabungan Terkumpul bulan yang dipilih: Prioritas sampai penuh lebih dulu, baru Jangka Panjang (urutan sama mengikuti waktu ditambahkan). Barang selesai yang dicatat sebagai pemakaian Tabungan mengurangi tabungan yang dibagi ke target lain, tetapi tidak masuk Pengeluaran, Terpakai, maupun Sisa uang bulan ini.</small>
 <small id="wmsg" style="display:block;min-height:1.4em;margin-bottom:10px"></small>
 <div class="chips" id="wf"></div>
 <div id="wl"></div>
@@ -366,25 +393,7 @@ body:not(.locked) #landing{display:none}
 </div>
 
 <script>
-/* =====================================================================
-   KONFIGURASI GOOGLE DRIVE (wajib diisi agar tombol "Masuk dengan Google" aktif)
-   1. Buka https://console.cloud.google.com lalu buat proyek baru.
-   2. APIs & Services > Library > aktifkan "Google Drive API".
-   3. APIs & Services > OAuth consent screen: pilih External, isi nama aplikasi dan email,
-      tambahkan scope ".../auth/drive.file". Selama status "Testing", tambahkan email
-      Google pengguna di daftar "Test users" (atau publikasikan aplikasinya).
-   4. APIs & Services > Credentials > Create credentials > OAuth client ID > "Web application".
-      Authorized JavaScript origins: https://bikimao.github.io  (tanpa path; tambahkan
-      http://localhost:8080 untuk uji lokal bila perlu).
-   5. Salin Client ID (berakhiran .apps.googleusercontent.com) dan tempel di bawah ini.
-   Client ID boleh ada di kode publik. Jangan pernah menaruh Client Secret di sini.
-   Scope drive.file hanya mengizinkan aplikasi ini mengakses berkas yang ia buat sendiri.
-   ===================================================================== */
-const CLIENT_ID="436419164142-aka9j1jo9oquf59bh98csoaeqqhj8e86.apps.googleusercontent.com";
-const GD_SCOPE="https://www.googleapis.com/auth/drive.file";
-const GD_FILE="bikimao-keuangan-data.json";
-const GD={on:false,token:"",exp:0,fileId:"",user:null,timer:null,busy:false,dirty:false};
-let DBKEY="amplop-v2";
+let DBKEY="";
 
 const CATS=[["makan","Makan dan minum"],["rumah","Sewa kos"],["transport","Transportasi"],["utilitas","Listrik, air, internet"],["sehat","Kesehatan"],["darurat","Dana Darurat"],["tabung","Tabungan"]];
 const nf=n=>new Intl.NumberFormat("id-ID").format(Math.round(n));
@@ -395,7 +404,7 @@ const pad=n=>String(n).padStart(2,"0");
 const ymd=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 const now=new Date();let month=ymd(now).slice(0,7);
 let DB={months:{}};
-const save=()=>{DB.savedAt=Date.now();try{localStorage.setItem(DBKEY,JSON.stringify(DB))}catch(e){}queueSync()};
+const save=()=>{DB.savedAt=Date.now();try{if(DBKEY)localStorage.setItem(DBKEY,JSON.stringify(DB))}catch(e){}};
 const blank=()=>({income:0,budgets:{},tx:[],inc2:[],ef0:null,sv0:null});
 
 /* data per bulan */
@@ -453,7 +462,7 @@ function loadLocalDB(){
     }
   }
 }catch(e){DB={months:{}}}
-  normDB();
+  if(normDB())save();
 }
 
 $("mon").value=month;$("dt").value=ymd(now);$("dt2").value=ymd(now);
@@ -671,11 +680,24 @@ const OLDN={"Sedang Dikejar":"Prioritas","Utama":"Prioritas","Santai":"Jangka Pa
 function normDB(){
   DB.months=DB.months||{};DB.wishlist=DB.wishlist||[];
   DB.wishlist.forEach(w=>{if(OLDN[w.fokus])w.fokus=OLDN[w.fokus];else if(!(w.fokus in PR))w.fokus=OLDP[w.prio]||"Prioritas"});
+  /* pembersihan satu kali: catatan "Beli: ..." lama (dari Target Barang) di amplop Tabungan dipisahkan dari pengeluaran bulanan */
+  const first=!DB.cleanV;
+  if(first){
+    const isBeli=t=>t&&t.cat==="tabung"&&typeof t.note==="string"&&t.note.indexOf("Beli: ")===0;
+    const ids=new Set();
+    Object.keys(DB.months).forEach(k=>{const x=DB.months[k];if(x&&Array.isArray(x.tx))x.tx.forEach(t=>{if(isBeli(t))ids.add(t.id)})});
+    DB.wishlist.forEach(w=>{
+      if(w.txId!=null||w.txM!=null){if(w.bought&&ids.has(w.txId))w.used=true;delete w.txId;delete w.txM}
+    });
+    Object.keys(DB.months).forEach(k=>{const x=DB.months[k];if(x&&Array.isArray(x.tx))x.tx=x.tx.filter(t=>!isBeli(t))});
+    DB.cleanV=1;
+  }
+  return first;
 }
 let wmsg="",wfilter="all",wconf=new Set();
 function wDist(){
   const x=ensure(month),total=carry(month,"sv").v+bud(x,"tabung");
-  const used=DB.wishlist.filter(w=>w.bought&&w.txId&&DB.months[w.txM]&&DB.months[w.txM].tx.some(t=>t.id===w.txId)).reduce((a,w)=>a+w.saved,0);
+  const used=DB.wishlist.filter(w=>w.bought&&w.used).reduce((a,w)=>a+w.saved,0);
   const pool=Math.max(0,total-used);
   let left=pool;const alloc={};
   DB.wishlist.filter(w=>!w.bought).sort((a,b)=>PR[a.fokus]-PR[b.fokus]||a.id-b.id).forEach(w=>{const k=Math.min(w.price,left);alloc[w.id]=k;left-=k});
@@ -692,20 +714,13 @@ $("fw").onsubmit=e=>{
 };
 function setDone(w,rec){
   const a=wDist().alloc[w.id]||0;
-  w.saved=a;w.bought=true;w.boughtDate=ymd(now);
-  if(rec&&a>0){
-    const mk=ymd(now).slice(0,7),y=ensure(mk),id=Date.now();
-    y.tx.push({id,date:ymd(now),cat:"tabung",amt:a,note:"Beli: "+w.name});
-    w.txId=id;w.txM=mk;
-    wmsg="Selesai. Tercatat sebagai pengeluaran amplop Tabungan sebesar "+fmt(a)+", dana itu mengurangi tabungan yang dibagi ke target.";
-  }else wmsg="Target ditandai selesai.";
+  w.saved=a;w.bought=true;w.boughtDate=ymd(now);w.used=!!(rec&&a>0);
+  wmsg=w.used?"Selesai. Dana "+fmt(a)+" dicatat sebagai pemakaian Tabungan dan mengurangi tabungan yang dibagi ke target lain. Tidak masuk Pengeluaran bulanan.":"Target ditandai selesai.";
   wconf.delete(w.id);save();render();
 }
 function undoDone(w){
-  const had=!!w.txId;
-  if(had&&DB.months[w.txM])DB.months[w.txM].tx=DB.months[w.txM].tx.filter(t=>t.id!==w.txId);
-  w.bought=false;w.saved=0;delete w.boughtDate;delete w.txId;delete w.txM;
-  wmsg=had?"Dikembalikan ke daftar aktif. Pengeluaran yang tercatat ikut dibatalkan.":"Dikembalikan ke daftar aktif.";
+  w.bought=false;w.saved=0;delete w.boughtDate;delete w.used;delete w.txId;delete w.txM;
+  wmsg="Dikembalikan ke daftar aktif.";
   save();render();
 }
 function renderWish(){
@@ -755,7 +770,7 @@ function renderWish(){
     el.querySelector(".wpg").textContent="Terkumpul "+fmt(got)+" dari "+fmt(w.price)+" ("+Math.floor(pct)+"%) \u2013 masih butuh "+fmt(need);
     el.querySelector(".we").textContent=est[w.id].t;
     const cf=el.querySelector(".cf");
-    if(cf)cf.querySelector("span").textContent="Catat dana "+fmt(got)+" yang terkumpul untuk barang ini sebagai pengeluaran amplop Tabungan?";
+    if(cf)cf.querySelector("span").textContent="Catat dana "+fmt(got)+" untuk barang ini sebagai pemakaian Tabungan? Dana ini mengurangi tabungan yang dibagi ke target lain, tetapi tidak dihitung sebagai Pengeluaran bulanan.";
     const dn=el.querySelector(".dn");dn.checked=wconf.has(w.id);
     dn.onchange=()=>{
       if(dn.checked){if(got>0){wconf.add(w.id);wmsg="";renderWish()}else setDone(w,false)}
@@ -776,7 +791,7 @@ function renderWish(){
     const li=document.createElement("li");
     li.innerHTML='<div class="n dr"><input type="checkbox" class="dn" checked aria-label="Batalkan selesai"><div><b class="dnm"></b><span></span></div></div><div class="a"><span></span><button class="x" type="button" aria-label="Hapus dari daftar">&times;</button></div>';
     li.querySelector(".dnm").textContent=w.name;
-    li.querySelector(".n span").textContent="Selesai "+new Date((w.boughtDate||ymd(now))+"T00:00:00").toLocaleDateString("id-ID",{day:"numeric",month:"short",year:"numeric"})+" \u2013 dana terkumpul "+fmt(w.saved)+(w.txId?" (tercatat sebagai pengeluaran, mengurangi tabungan)":" (tidak mengurangi tabungan)");
+    li.querySelector(".n span").textContent="Selesai "+new Date((w.boughtDate||ymd(now))+"T00:00:00").toLocaleDateString("id-ID",{day:"numeric",month:"short",year:"numeric"})+" \u2013 dana terkumpul "+fmt(w.saved)+(w.used?" (dicatat sebagai pemakaian Tabungan, mengurangi tabungan)":" (tidak mengurangi tabungan)");
     li.querySelector(".a span").textContent=fmt(w.price);
     li.querySelector(".dn").onchange=e=>{if(!e.target.checked)undoDone(w)};
     li.querySelector(".x").onclick=()=>{DB.wishlist=DB.wishlist.filter(y=>y.id!==w.id);save();renderWish()};
@@ -875,13 +890,26 @@ function quick(id){
 $("qa1").onclick=()=>quick("amt");
 $("qa2").onclick=()=>quick("amt2");
 $("qa3").onclick=()=>$("shareBtn").click();
-/* ===== Layar pembuka & sinkronisasi Google Drive ===== */
-function setStatus(cls,text,btn){
-  const el=$("syncst");el.className="sync"+(cls?" "+cls:"");el.textContent=text;$("syncbtn").hidden=!btn;
+/* ===== Akun ID & Password dan layar pembuka ===== */
+const AKEY="bikimao-accounts",ITER=150000;
+let ACC="";
+const getAcc=()=>{try{return JSON.parse(localStorage.getItem(AKEY)||"{}")||{}}catch(e){return{}}};
+const putAcc=a=>{try{localStorage.setItem(AKEY,JSON.stringify(a));return true}catch(e){return false}};
+const cleanId=v=>String(v||"").trim();
+const findKey=(acc,id)=>Object.prototype.hasOwnProperty.call(acc,id)?id:(Object.keys(acc).find(k=>k.toLowerCase()===id.toLowerCase())||"");
+const b64=buf=>btoa(String.fromCharCode.apply(null,new Uint8Array(buf)));
+const unb64=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
+async function hashPw(pw,salt,iter){
+  if(typeof crypto==="undefined"||!crypto.subtle)throw new Error("Browser ini tidak mendukung penyimpanan password yang aman. Buka aplikasi lewat alamat HTTPS atau gunakan browser yang lebih baru.");
+  const k=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveBits"]);
+  return b64(await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:unb64(salt),iterations:iter},k,256));
 }
+const newSalt=()=>b64(crypto.getRandomValues(new Uint8Array(16)));
+const say=(t,err)=>{$("lmsg").className="lmsg"+(err&&t?" err":"");$("lmsg").textContent=t||"";if(err&&t){try{$("lmsg").scrollIntoView({block:"nearest"})}catch(e){}}};
+function setStatus(cls,text){const el=$("syncst");el.className="sync"+(cls?" "+cls:"");el.textContent=text}
 function setAcct(){
-  if(GD.on){$("acname").textContent=GD.user.displayName||"Akun Google";$("acmail").textContent=GD.user.emailAddress||""}
-  else{$("acname").textContent="Mode Lokal";$("acmail").textContent="Data hanya di browser ini"}
+  $("acname").textContent=ACC;
+  $("acmail").textContent="Akun ID & Password";
 }
 function startApp(){
   month=ymd(now).slice(0,7);$("mon").value=month;
@@ -890,137 +918,83 @@ function startApp(){
   document.body.classList.remove("locked");
   render();route();
 }
-function enterLocal(){
-  DBKEY="amplop-v2";GD.on=false;GD.user=null;
+function enterAccount(id){
+  ACC=id;DBKEY="amplop-u-"+id;
   loadLocalDB();
-  try{localStorage.setItem("bikimao-mode","local")}catch(e){}
-  setAcct();setStatus("","Tersimpan di browser ini (localStorage)");
+  try{sessionStorage.setItem("bikimao-session",id)}catch(e){}
+  setAcct();setStatus("ok","Tersimpan di browser ini (akun "+id+")");
   startApp();
 }
-function getToken(){
-  return new Promise((res,rej)=>{
-    if(!CLIENT_ID)return rej(new Error("Client ID Google belum diisi. Tempel Client ID di bagian atas script (lihat petunjuk di sana)."));
-    if(!window.google||!google.accounts||!google.accounts.oauth2)return rej(new Error("Layanan Google belum termuat. Periksa koneksi internet lalu muat ulang halaman."));
-    const c=google.accounts.oauth2.initTokenClient({
-      client_id:CLIENT_ID,scope:GD_SCOPE,
-      callback:r=>{
-        if(r.error)return rej(new Error(r.error_description||r.error));
-        GD.token=r.access_token;GD.exp=Date.now()+Math.max(60,(+r.expires_in||3600)-60)*1000;res(GD.token);
-      },
-      error_callback:e=>rej(new Error(e&&e.type==="popup_closed"?"Jendela login Google ditutup sebelum selesai.":"Login Google gagal atau diblokir browser."))
-    });
-    c.requestAccessToken();
-  });
+function lmode(m){
+  $("fin").hidden=m!=="in";$("fup").hidden=m!=="up";
+  $("ltabIn").setAttribute("aria-pressed",String(m==="in"));
+  $("ltabUp").setAttribute("aria-pressed",String(m==="up"));
+  say("");
 }
-async function gfetch(url,opt){
-  opt=opt||{};
-  if(!GD.token||Date.now()>GD.exp)throw Object.assign(new Error("Sesi Google berakhir"),{auth:true});
-  const r=await fetch(url,Object.assign({},opt,{headers:Object.assign({Authorization:"Bearer "+GD.token},opt.headers||{})}));
-  if(r.status===401)throw Object.assign(new Error("Sesi Google berakhir"),{auth:true});
-  if(!r.ok)throw Object.assign(new Error("Google Drive menolak permintaan ("+r.status+")"+(r.status===403?". Pastikan Google Drive API sudah diaktifkan dan akun Anda terdaftar sebagai Test user.":"")),{status:r.status});
-  return r;
-}
-const gdUp="https://www.googleapis.com/upload/drive/v3/files",gdApi="https://www.googleapis.com/drive/v3/";
-async function findFile(){
-  const q=encodeURIComponent("name='"+GD_FILE+"' and trashed=false");
-  const j=await(await gfetch(gdApi+"files?q="+q+"&spaces=drive&orderBy=modifiedTime%20desc&pageSize=1&fields=files(id)")).json();
-  return j.files&&j.files[0]?j.files[0].id:"";
-}
-async function createFile(body){
-  const b="bikimao"+Date.now();
-  const payload="--"+b+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+JSON.stringify({name:GD_FILE,mimeType:"application/json"})+"\r\n--"+b+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+body+"\r\n--"+b+"--";
-  const r=await gfetch(gdUp+"?uploadType=multipart&fields=id",{method:"POST",headers:{"Content-Type":"multipart/related; boundary="+b},body:payload});
-  return(await r.json()).id;
-}
-const pack=()=>JSON.stringify({app:"bikimao",v:2,savedAt:DB.savedAt||Date.now(),db:DB});
-function queueSync(){
-  if(!GD.on)return;
-  setStatus("busy","Menyimpan ke Google Drive\u2026");
-  clearTimeout(GD.timer);GD.timer=setTimeout(syncNow,1500);
-}
-async function syncNow(){
-  if(!GD.on)return;
-  if(GD.busy){GD.dirty=true;return}
-  GD.busy=true;GD.dirty=false;
+$("ltabIn").onclick=()=>lmode("in");
+$("ltabUp").onclick=()=>lmode("up");
+$("fin").onsubmit=async e=>{
+  e.preventDefault();
+  const id=cleanId($("lid").value),pw=$("lpw").value,btn=$("lgo");
+  if(!id)return say("ID Akun belum diisi.",true);
+  if(!pw)return say("Password belum diisi.",true);
+  btn.disabled=true;say("Memeriksa\u2026");
   try{
-    const body=pack();
-    if(!GD.fileId)GD.fileId=await createFile(body);
-    else await gfetch(gdUp+"/"+GD.fileId+"?uploadType=media&fields=id",{method:"PATCH",headers:{"Content-Type":"application/json; charset=UTF-8"},body});
-    if(!GD.dirty)setStatus("ok","Tersimpan di Google Drive \u2713 "+new Date().toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"}));
-  }catch(e){
-    if(e.status===404&&GD.fileId){GD.fileId="";GD.dirty=true}
-    else if(e.auth)setStatus("err","Sesi Google berakhir. Data aman di browser ini; masuk lagi untuk melanjutkan sinkronisasi.",true);
-    else{setStatus("err","Gagal menyimpan ke Google Drive. Cadangan di browser aman; mencoba lagi nanti.");clearTimeout(GD.timer);GD.timer=setTimeout(syncNow,20000)}
-  }
-  GD.busy=false;
-  if(GD.dirty)syncNow();
-}
-const hasData=d=>!!d&&((d.wishlist&&d.wishlist.length>0)||Object.keys(d.months||{}).some(k=>{const x=d.months[k];return x.income>0||x.tx.length>0||x.inc2.length>0}));
-async function signInGoogle(){
-  const btn=$("lgoogle"),msg=$("lmsg");
-  const say=(t,err)=>{msg.className="lmsg"+(err?" err":"");msg.textContent=t};
-  btn.disabled=true;say("Menghubungkan ke Google\u2026");
-  try{
-    await getToken();
-    const u=(await(await gfetch(gdApi+"about?fields=user(displayName,emailAddress,permissionId)")).json()).user||{};
-    GD.user=u;
-    DBKEY="amplop-gd-"+(u.permissionId||u.emailAddress||"akun");
-    say("Memuat data dari Google Drive\u2026");
-    GD.fileId=await findFile();
-    let remote=null,local=null;
-    if(GD.fileId){
-      const t=await(await gfetch(gdApi+"files/"+GD.fileId+"?alt=media")).text();
-      try{remote=JSON.parse(t).db}catch(e){}
-      if(!remote||typeof remote!=="object")throw new Error("Isi berkas "+GD_FILE+" di Google Drive tidak bisa dibaca. Periksa berkas itu atau hapus agar dibuat ulang.");
-    }
-    try{local=JSON.parse(localStorage.getItem(DBKEY)||"null")}catch(e){}
-    let use=null,push=false;
-    if(remote&&(!local||(remote.savedAt||0)>=(local.savedAt||0)))use=remote;
-    else if(local){use=local;push=true}
-    else{
-      let lm=null;try{lm=JSON.parse(localStorage.getItem("amplop-v2")||"null")}catch(e){}
-      if(hasData(lm)&&confirm("Data dari Mode Lokal ditemukan di browser ini. Unggah sebagai data awal ke Google Drive Anda?"))use=lm;
-      push=true;
-    }
-    DB=use||{months:{}};normDB();
-    GD.on=true;
-    setAcct();
-    startApp();
-    if(push||!GD.fileId)save();else setStatus("ok","Tersimpan di Google Drive \u2713");
-    say("");
-  }catch(e){
-    GD.on=false;GD.token="";GD.fileId="";GD.user=null;DBKEY="amplop-v2";DB={months:{}};
-    say(e.message||"Login gagal.",true);
-  }
+    const acc=getAcc(),k=findKey(acc,id),a=k?acc[k]:null;
+    if(!a)say('ID Akun "'+id+'" tidak ditemukan di browser ini. Periksa ejaannya atau pilih Buat Akun Baru.',true);
+    else if(await hashPw(pw,a.salt,a.iter)!==a.hash)say("Password salah. Coba lagi.",true);
+    else{$("lpw").value="";say("");enterAccount(k)}
+  }catch(err){say("Gagal masuk: "+(err&&err.message||err),true)}
   btn.disabled=false;
-}
-$("lgoogle").onclick=signInGoogle;
-$("llocal").onclick=enterLocal;
-$("syncbtn").onclick=async()=>{
-  try{
-    const id=GD.user&&GD.user.permissionId;
-    await getToken();
-    const u=(await(await gfetch(gdApi+"about?fields=user(permissionId)")).json()).user||{};
-    if(id&&u.permissionId&&u.permissionId!==id){setStatus("err","Akun Google berbeda dari yang sedang aktif. Keluar lalu masuk dengan akun yang sama.",true);return}
-    setStatus("busy","Menyimpan ke Google Drive\u2026");syncNow();
-  }catch(e){setStatus("err",e.message,true)}
 };
-$("logout").onclick=async()=>{
-  clearTimeout(GD.timer);
-  if(GD.on)await syncNow();
-  GD.on=false;GD.token="";GD.exp=0;GD.fileId="";GD.user=null;
-  DB={months:{}};DBKEY="amplop-v2";
-  try{localStorage.removeItem("bikimao-mode")}catch(e){}
-  $("shbox").hidden=true;$("lgoogle").disabled=false;$("lmsg").textContent="";
+$("fup").onsubmit=async e=>{
+  e.preventDefault();
+  const id=cleanId($("rid").value),p1=$("rpw").value,p2=$("rpw2").value,btn=$("rgo");
+  if(!id)return say("ID Akun belum diisi.",true);
+  if(id.length>64)return say("ID Akun terlalu panjang (maksimal 64 karakter).",true);
+  if(id==="__proto__")return say("ID Akun ini tidak bisa dipakai. Pilih ID lain.",true);
+  if(!p1)return say("Password belum diisi.",true);
+  if(p1.length<6)return say("Password minimal 6 karakter (sekarang baru "+p1.length+").",true);
+  if(p1!==p2)return say("Konfirmasi Password tidak sama dengan Password.",true);
+  const ex=findKey(getAcc(),id);
+  if(ex){
+    lmode("in");$("lid").value=ex;
+    say('ID Akun "'+ex+'" sudah terdaftar. Masukkan password akun tersebut di tab Masuk, atau pilih ID lain di tab Buat Akun Baru.',true);
+    try{$("lpw").focus()}catch(e){}
+    return;
+  }
+  btn.disabled=true;say("Membuat akun\u2026");
+  try{
+    const salt=newSalt(),hash=await hashPw(p1,salt,ITER),acc=getAcc();
+    acc[id]={salt,iter:ITER,hash,created:Date.now()};
+    if(!putAcc(acc)||!getAcc()[id]){
+      say("Browser tidak mengizinkan penyimpanan data (mode privat atau diblokir), sehingga akun tidak bisa dibuat. Coba buka di browser biasa.",true);
+    }else{
+      try{
+        const old=localStorage.getItem("amplop-v2");
+        if(old&&!localStorage.getItem("amplop-u-"+id)&&confirm("Data lama dari versi sebelumnya ditemukan di browser ini. Pindahkan ke akun baru ini?")){
+          localStorage.setItem("amplop-u-"+id,old);localStorage.removeItem("amplop-v2");
+        }
+      }catch(e){}
+      ["rpw","rpw2"].forEach(i=>$(i).value="");say("");enterAccount(id);
+    }
+  }catch(err){say("Gagal membuat akun: "+(err&&err.message||err),true)}
+  btn.disabled=false;
+};
+$("logout").onclick=()=>{
+  ACC="";DB={months:{}};DBKEY="";
+  try{sessionStorage.removeItem("bikimao-session")}catch(e){}
+  $("shbox").hidden=true;
+  ["lid","lpw","rid","rpw","rpw2"].forEach(i=>$(i).value="");
+  lmode("in");
   try{history.replaceState(null,"",location.pathname)}catch(e){}
   document.body.classList.add("locked");
 };
 function boot(){
-  $("lhint").textContent=CLIENT_ID
-    ?"Data disimpan otomatis di berkas "+GD_FILE+" pada Google Drive Anda, dengan cadangan di browser ini."
-    :"Login Google belum aktif: tempel Client ID di bagian atas script. Mode Lokal tetap bisa dipakai.";
-  let m="";try{m=localStorage.getItem("bikimao-mode")||""}catch(e){}
-  if(m==="local")enterLocal();
+  $("lhint").textContent="Seluruh data disimpan dan dikelola lewat akun ID & Password yang dibuat di browser ini.";
+  let sid="";
+  try{sid=sessionStorage.getItem("bikimao-session")||"";localStorage.removeItem("bikimao-mode")}catch(e){}
+  if(sid&&getAcc()[sid])enterAccount(sid);
 }
 boot();
 </script>
