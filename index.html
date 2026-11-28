@@ -200,6 +200,10 @@ body:not(.locked) #landing{display:none}
 .lsm{background:#1b4320;color:#fff;border:0;border-radius:8px;padding:6px 12px;min-height:36px;font-weight:700;cursor:pointer;white-space:nowrap}
 .lsm:hover{background:#386624}
 .lsm:focus-visible{outline:2px solid #86B36E;outline-offset:2px}
+.rcode{margin:12px 0 8px;text-align:center;font:700 1.15rem ui-monospace,Menlo,Consolas,monospace;letter-spacing:.08em}
+.lchk{display:flex;gap:8px;align-items:center;justify-content:center;margin:14px 0 0!important;color:#16231E!important;font-size:.9rem!important}
+.lsm:disabled,.lbtn:disabled{opacity:.55;cursor:not-allowed}
+[hidden]{display:none!important}
 </style>
 </head>
 <body class="locked">
@@ -208,7 +212,7 @@ body:not(.locked) #landing{display:none}
 <svg class="lemb" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#1B4320"/><rect x="14" y="34" width="9" height="16" rx="2" fill="#fff"/><rect x="28" y="26" width="9" height="24" rx="2" fill="#A9D18E"/><rect x="42" y="16" width="9" height="34" rx="2" fill="#fff"/></svg>
 <div class="ltl" id="ltitle">BIKIMAO APK KEUANGAN 💸</div>
 <p class="lsub">Catat Anggaran, Dana Darurat, Tabungan &amp; Target Barang</p>
-<div class="ltabs" role="group" aria-label="Masuk atau buat akun">
+<div class="ltabs" id="ltabs" role="group" aria-label="Masuk atau buat akun">
 <button class="ltab" id="ltabIn" type="button" aria-pressed="true">Masuk</button>
 <button class="ltab" id="ltabUp" type="button" aria-pressed="false">Buat Akun Baru</button>
 </div>
@@ -224,6 +228,10 @@ body:not(.locked) #landing{display:none}
 <div class="lh">Lupa Password</div>
 <label for="pid">ID Akun yang ingin dipulihkan</label>
 <input id="pid" autocomplete="off" autocapitalize="off" spellcheck="false">
+<div id="pcodewrap" hidden>
+<label for="pcode">Kode Pemulihan</label>
+<input id="pcode" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX-XXXX">
+</div>
 <div id="pstep2" hidden>
 <label for="pnw">Password Baru (minimal 6 karakter)</label>
 <input id="pnw" type="password" autocomplete="new-password">
@@ -250,6 +258,14 @@ body:not(.locked) #landing{display:none}
 <input id="rpw2" type="password" autocomplete="new-password">
 <button class="lbtn" id="rgo" type="submit">Buat Akun</button>
 </form>
+<div class="lf" id="frec" hidden>
+<div class="lh">Simpan Kode Pemulihan</div>
+<p class="lnote" style="margin:6px 0 0">Kode ini dipakai untuk mereset password jika Anda lupa. Kode hanya ditampilkan sekali, jadi catat dan simpan di tempat aman.</p>
+<input id="rcode" readonly aria-label="Kode Pemulihan" class="rcode">
+<button class="lsm" id="rcopy" type="button">Salin Kode</button>
+<label class="lchk"><input type="checkbox" id="rok"> Saya sudah menyimpan kode ini</label>
+<button class="lbtn" id="rgo2" type="button" disabled>Lanjut ke Dashboard</button>
+</div>
 <p class="lmsg" id="lmsg" role="alert" aria-live="assertive"></p>
 <p class="lnote" id="lhint"></p>
 </div>
@@ -275,6 +291,7 @@ body:not(.locked) #landing{display:none}
 <div class="acn" id="acname"></div>
 <div class="ace" id="acmail"></div>
 <div class="sync" id="syncst" role="status" aria-live="polite"></div>
+<button class="btn ghost sm" id="syncbtn" type="button" hidden>Sinkronkan sekarang</button>
 <button class="btn ghost sm" id="logout" type="button">Keluar / Ganti Akun</button>
 </div>
 </aside>
@@ -383,9 +400,9 @@ body:not(.locked) #landing{display:none}
 <div class="note">Sisa dana yang belum dialokasikan ke amplop kebutuhan otomatis masuk ke Dana Darurat dan Tabungan dengan rasio 60:40.</div>
 <div class="note">Target Dana Darurat 6 Bulan dihitung dari rata-rata pengeluaran pokok (di luar amplop Dana Darurat dan Tabungan) selama maksimal 6 bulan terakhir yang tercatat, dikali 6.</div>
 <div class="note">Saldo Dana Darurat dan Tabungan berlanjut dari bulan sebelumnya; saldo awal bisa Anda koreksi manual.</div>
-<div class="note">Seluruh data disimpan dan dikelola lewat akun ID &amp; Password yang Anda buat di browser ini. Data tiap akun terpisah, tidak dikirim ke server mana pun, dan password disimpan sebagai hash, bukan teks biasa.</div>
-<div class="note">Akun terikat pada browser dan perangkat ini. Akun tidak muncul di browser atau perangkat lain, dan menghapus data situs browser akan menghapus akun beserta datanya.</div>
-<div class="note">Lupa password atau ID? Pakai <b>Lupa Password?</b> (cukup dengan ID Akun) atau <b>Lupa ID Akun?</b> (daftar ID yang tersimpan) di layar masuk. Pemulihan hanya berlaku untuk akun yang tersimpan di browser dan perangkat ini, dan data keuangan tidak terhapus saat password diganti. Karena itu siapa pun yang bisa membuka browser ini bisa memakainya, jadi hindari perangkat bersama.</div>
+<div class="note" id="nt1">Seluruh data disimpan dan dikelola lewat akun ID &amp; Password yang Anda buat di browser ini. Data tiap akun terpisah, tidak dikirim ke server mana pun, dan password disimpan sebagai hash, bukan teks biasa.</div>
+<div class="note" id="nt2">Akun terikat pada browser dan perangkat ini. Akun tidak muncul di browser atau perangkat lain, dan menghapus data situs browser akan menghapus akun beserta datanya.</div>
+<div class="note" id="nt3">Lupa password atau ID? Pakai <b>Lupa Password?</b> (cukup dengan ID Akun) atau <b>Lupa ID Akun?</b> (daftar ID yang tersimpan) di layar masuk. Pemulihan hanya berlaku untuk akun yang tersimpan di browser dan perangkat ini, dan data keuangan tidak terhapus saat password diganti. Karena itu siapa pun yang bisa membuka browser ini bisa memakainya, jadi hindari perangkat bersama.</div>
 </section>
 </div>
 <section id="viewY" hidden>
@@ -429,6 +446,106 @@ body:not(.locked) #landing{display:none}
 </div>
 
 <script>
+/* =====================================================================
+   KONFIGURASI SINKRONISASI CLOUD (Supabase) - isi dua nilai di bawah ini
+   Selama keduanya kosong, aplikasi berjalan dalam mode lokal (data hanya di satu browser).
+
+   Langkah:
+   1. Buat proyek gratis di https://supabase.com lalu buka SQL Editor > New query.
+   2. Tempel dan jalankan SQL berikut (ganti GANTI-RAHASIA-1 dan GANTI-RAHASIA-2 dengan teks acak Anda sendiri).
+
+      create table if not exists public.bikimao_accounts (
+        id_key text primary key, display_id text not null,
+        salt text not null, iter int not null, hash text not null,
+        rec_salt text not null, rec_iter int not null, rec_hash text not null,
+        data jsonb not null default '{}'::jsonb,
+        created_at timestamptz not null default now(),
+        updated_at timestamptz not null default now());
+      alter table public.bikimao_accounts enable row level security;
+      revoke all on table public.bikimao_accounts from anon, authenticated;
+
+      create or replace function public.bk_params(p_id text) returns json
+      language plpgsql security definer set search_path = public as $$
+      declare k text := lower(btrim(p_id)); r public.bikimao_accounts;
+      begin
+        select * into r from public.bikimao_accounts where id_key = k;
+        if found then
+          return json_build_object('salt',r.salt,'iter',r.iter,'rec_salt',r.rec_salt,'rec_iter',r.rec_iter);
+        end if;
+        return json_build_object('salt',encode(decode(md5('GANTI-RAHASIA-1'||k),'hex'),'base64'),'iter',150000,
+          'rec_salt',encode(decode(md5('GANTI-RAHASIA-2'||k),'hex'),'base64'),'rec_iter',150000);
+      end $$;
+
+      create or replace function public.bk_register(p_id text,p_salt text,p_iter int,p_hash text,
+        p_rec_salt text,p_rec_iter int,p_rec_hash text,p_data jsonb) returns json
+      language plpgsql security definer set search_path = public as $$
+      declare k text := lower(btrim(p_id)); t timestamptz;
+      begin
+        if length(k) < 1 or length(k) > 64 then return json_build_object('ok',false,'err','id'); end if;
+        if octet_length(p_data::text) > 2000000 then return json_build_object('ok',false,'err','size'); end if;
+        insert into public.bikimao_accounts(id_key,display_id,salt,iter,hash,rec_salt,rec_iter,rec_hash,data)
+          values (k,btrim(p_id),p_salt,p_iter,p_hash,p_rec_salt,p_rec_iter,p_rec_hash,p_data)
+          on conflict (id_key) do nothing returning updated_at into t;
+        if t is null then return json_build_object('ok',false,'err','exists'); end if;
+        return json_build_object('ok',true,'updated_at',t);
+      end $$;
+
+      create or replace function public.bk_login(p_id text,p_hash text) returns json
+      language plpgsql security definer set search_path = public as $$
+      declare r public.bikimao_accounts;
+      begin
+        select * into r from public.bikimao_accounts where id_key = lower(btrim(p_id)) and hash = p_hash;
+        if not found then return json_build_object('ok',false); end if;
+        return json_build_object('ok',true,'display_id',r.display_id,'data',r.data,'updated_at',r.updated_at);
+      end $$;
+
+      create or replace function public.bk_version(p_id text,p_hash text) returns json
+      language plpgsql security definer set search_path = public as $$
+      declare r public.bikimao_accounts;
+      begin
+        select * into r from public.bikimao_accounts where id_key = lower(btrim(p_id)) and hash = p_hash;
+        if not found then return json_build_object('ok',false); end if;
+        return json_build_object('ok',true,'updated_at',r.updated_at);
+      end $$;
+
+      create or replace function public.bk_save(p_id text,p_hash text,p_data jsonb,p_base text) returns json
+      language plpgsql security definer set search_path = public as $$
+      declare r public.bikimao_accounts; t timestamptz;
+      begin
+        select * into r from public.bikimao_accounts where id_key = lower(btrim(p_id)) for update;
+        if not found or r.hash <> p_hash then return json_build_object('ok',false,'err','auth'); end if;
+        if octet_length(p_data::text) > 2000000 then return json_build_object('ok',false,'err','size'); end if;
+        if p_base is null or r.updated_at <> p_base::timestamptz then
+          return json_build_object('ok',false,'conflict',true,'data',r.data,'updated_at',r.updated_at);
+        end if;
+        update public.bikimao_accounts set data = p_data, updated_at = now() where id_key = r.id_key returning updated_at into t;
+        return json_build_object('ok',true,'updated_at',t);
+      end $$;
+
+      create or replace function public.bk_reset(p_id text,p_rec_hash text,p_salt text,p_iter int,p_hash text) returns json
+      language plpgsql security definer set search_path = public as $$
+      begin
+        update public.bikimao_accounts set salt = p_salt, iter = p_iter, hash = p_hash
+          where id_key = lower(btrim(p_id)) and rec_hash = p_rec_hash;
+        if found then return json_build_object('ok',true); end if;
+        return json_build_object('ok',false);
+      end $$;
+
+      revoke all on function public.bk_params(text), public.bk_login(text,text), public.bk_version(text,text),
+        public.bk_save(text,text,jsonb,text), public.bk_reset(text,text,text,int,text),
+        public.bk_register(text,text,int,text,text,int,text,jsonb) from public;
+      grant execute on function public.bk_params(text), public.bk_login(text,text), public.bk_version(text,text),
+        public.bk_save(text,text,jsonb,text), public.bk_reset(text,text,text,int,text),
+        public.bk_register(text,text,int,text,text,int,text,jsonb) to anon;
+
+   3. Project Settings > API: salin "Project URL" ke SUPA_URL dan kunci "anon" (atau "publishable")
+      ke SUPA_KEY. Kunci ini memang publik; JANGAN pernah menaruh kunci service_role di sini.
+   Tabel tidak bisa dibaca langsung oleh publik. Semua akses lewat fungsi di atas yang memeriksa
+   hash password di sisi server. Data tidak dienkripsi di server, jadi pemilik proyek Supabase
+   dapat melihat isinya.
+   ===================================================================== */
+const SUPA_URL="";   /* contoh: "https://abcdefgh.supabase.co" */
+const SUPA_KEY="";   /* contoh: "eyJhbGciOi..." atau "sb_publishable_..." */
 let DBKEY="";
 
 const CATS=[["makan","Makan dan minum"],["rumah","Sewa kos"],["transport","Transportasi"],["utilitas","Listrik, air, internet"],["sehat","Kesehatan"],["darurat","Dana Darurat"],["tabung","Tabungan"]];
@@ -440,7 +557,7 @@ const pad=n=>String(n).padStart(2,"0");
 const ymd=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 const now=new Date();let month=ymd(now).slice(0,7);
 let DB={months:{}};
-const save=()=>{DB.savedAt=Date.now();try{if(DBKEY)localStorage.setItem(DBKEY,JSON.stringify(DB))}catch(e){}};
+const save=()=>{DB.savedAt=Date.now();try{if(DBKEY)localStorage.setItem(DBKEY,JSON.stringify(DB))}catch(e){}queueSync()};
 const blank=()=>({income:0,budgets:{},tx:[],inc2:[],ef0:null,sv0:null});
 
 /* data per bulan */
@@ -926,12 +1043,15 @@ function quick(id){
 $("qa1").onclick=()=>quick("amt");
 $("qa2").onclick=()=>quick("amt2");
 $("qa3").onclick=()=>$("shareBtn").click();
-/* ===== Akun ID & Password dan layar pembuka ===== */
-const AKEY="bikimao-accounts",ITER=150000;
+/* ===== Akun ID & Password, layar pembuka, sinkronisasi cloud ===== */
+const AKEY="bikimao-accounts",ITER=150000,KNOWN="bikimao-known-ids";
+const CLOUD=!!(SUPA_URL&&SUPA_KEY);
 let ACC="";
+const CL={on:false,key:"",hash:"",base:"",timer:null,busy:false,dirty:false,poll:null};
 const getAcc=()=>{try{return JSON.parse(localStorage.getItem(AKEY)||"{}")||{}}catch(e){return{}}};
 const putAcc=a=>{try{localStorage.setItem(AKEY,JSON.stringify(a));return true}catch(e){return false}};
 const cleanId=v=>String(v||"").trim();
+const idKey=v=>cleanId(v).toLowerCase();
 const findKey=(acc,id)=>Object.prototype.hasOwnProperty.call(acc,id)?id:(Object.keys(acc).find(k=>k.toLowerCase()===id.toLowerCase())||"");
 const b64=buf=>btoa(String.fromCharCode.apply(null,new Uint8Array(buf)));
 const unb64=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
@@ -941,11 +1061,101 @@ async function hashPw(pw,salt,iter){
   return b64(await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:unb64(salt),iterations:iter},k,256));
 }
 const newSalt=()=>b64(crypto.getRandomValues(new Uint8Array(16)));
+const CODE_CH="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+function newCode(){const r=crypto.getRandomValues(new Uint8Array(16));let s="";for(let i=0;i<16;i++){s+=CODE_CH[r[i]%32];if(i%4===3&&i<15)s+="-"}return s}
+const normCode=c=>String(c||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
 const say=(t,err,ok)=>{$("lmsg").className="lmsg"+(err&&t?" err":ok&&t?" ok":"");$("lmsg").textContent=t||"";if(err&&t){try{$("lmsg").scrollIntoView({block:"nearest"})}catch(e){}}};
 function setStatus(cls,text){const el=$("syncst");el.className="sync"+(cls?" "+cls:"");el.textContent=text}
+const hhmm=()=>new Date().toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"});
+
+/* ---------- cloud (Supabase REST + fungsi RPC) ---------- */
+async function rpc(fn,args){
+  const r=await fetch(SUPA_URL.replace(/\/+$/,"")+"/rest/v1/rpc/"+fn,{method:"POST",headers:{apikey:SUPA_KEY,Authorization:"Bearer "+SUPA_KEY,"Content-Type":"application/json"},body:JSON.stringify(args)});
+  if(!r.ok)throw Object.assign(new Error("Cloud menolak permintaan ("+r.status+"). Pastikan SQL setup sudah dijalankan dan URL serta kunci benar."),{status:r.status});
+  return r.json();
+}
+const cloudErr=e=>(e&&e.status)?e.message:(e instanceof TypeError?"Tidak bisa terhubung ke cloud. Periksa koneksi internet lalu coba lagi.":(e&&e.message)||String(e));
+const cKey=k=>"amplop-c-"+k,mKey=k=>"amplop-cm-"+k;
+function readCache(k){try{return JSON.parse(localStorage.getItem(cKey(k))||"null")}catch(e){return null}}
+function isDirty(k){try{return JSON.parse(localStorage.getItem(mKey(k))||"{}").dirty===true}catch(e){return false}}
+function setDirty(k,v){try{localStorage.setItem(mKey(k),JSON.stringify({dirty:!!v}))}catch(e){}}
+function knownIds(){try{const a=JSON.parse(localStorage.getItem(KNOWN)||"[]");return Array.isArray(a)?a:[]}catch(e){return[]}}
+function rememberId(d){try{const a=knownIds().filter(x=>x.toLowerCase()!==d.toLowerCase());a.unshift(d);localStorage.setItem(KNOWN,JSON.stringify(a.slice(0,50)))}catch(e){}}
+/* gabung dua versi data: yang savedAt lebih baru jadi dasar, transaksi/uang masuk/target barang yang hanya ada di versi lain ditambahkan */
+function mergeDB(a,b){
+  a=a||{months:{}};b=b||{months:{}};
+  const base=(a.savedAt||0)>=(b.savedAt||0)?a:b,other=base===a?b:a;
+  const out=JSON.parse(JSON.stringify(base));
+  out.months=out.months||{};out.wishlist=out.wishlist||[];
+  Object.keys(other.months||{}).forEach(k=>{
+    const o=other.months[k],m=out.months[k];
+    if(!m){out.months[k]=JSON.parse(JSON.stringify(o));return}
+    ["tx","inc2"].forEach(f=>{m[f]=m[f]||[];const ids=new Set(m[f].map(t=>t.id));(o[f]||[]).forEach(t=>{if(!ids.has(t.id))m[f].push(t)})});
+  });
+  const w=new Set(out.wishlist.map(x=>x.id));(other.wishlist||[]).forEach(x=>{if(!w.has(x.id))out.wishlist.push(x)});
+  out.savedAt=Date.now();
+  return out;
+}
+function queueSync(){
+  if(!CL.on)return;
+  setDirty(CL.key,true);
+  setStatus("busy","Menyinkronkan ke cloud\u2026");
+  clearTimeout(CL.timer);CL.timer=setTimeout(()=>{CL.timer=null;syncNow()},1200);
+}
+async function syncNow(){
+  if(!CL.on)return;
+  if(CL.busy){CL.dirty=true;return}
+  clearTimeout(CL.timer);CL.timer=null;
+  CL.busy=true;CL.dirty=false;
+  try{
+    let r=await rpc("bk_save",{p_id:CL.key,p_hash:CL.hash,p_data:DB,p_base:CL.base||null});
+    let merged=false;
+    if(r.conflict){
+      DB=mergeDB(DB,r.data);normDB();
+      try{localStorage.setItem(DBKEY,JSON.stringify(DB))}catch(e){}
+      merged=true;
+      r=await rpc("bk_save",{p_id:CL.key,p_hash:CL.hash,p_data:DB,p_base:r.updated_at});
+      if(r.conflict){clearTimeout(CL.timer);CL.timer=setTimeout(()=>{CL.timer=null;syncNow()},2000);CL.busy=false;return}
+    }
+    if(r.err==="auth"){CL.busy=false;authLost();return}
+    if(r.ok){
+      CL.base=r.updated_at;
+      if(!CL.dirty&&!CL.timer)setDirty(CL.key,false);
+      if(merged)render();
+      if(!CL.dirty&&!CL.timer)setStatus("ok","Tersinkron ke cloud \u2713 "+hhmm()+(merged?" (digabung dengan perangkat lain)":""));
+    }else setStatus("err","Gagal menyinkronkan"+(r.err==="size"?": data terlalu besar.":"."));
+  }catch(e){
+    setStatus("err","Offline atau cloud tidak terjangkau. Perubahan aman di perangkat ini dan akan disinkronkan lagi.");
+    clearTimeout(CL.timer);CL.timer=setTimeout(()=>{CL.timer=null;syncNow()},20000);
+  }
+  CL.busy=false;
+  if(CL.dirty)syncNow();
+}
+async function pull(){
+  if(!CL.on||CL.busy||CL.timer)return;
+  if(isDirty(CL.key)){syncNow();return}
+  try{
+    const v=await rpc("bk_version",{p_id:CL.key,p_hash:CL.hash});
+    if(!v.ok){authLost();return}
+    if(v.updated_at!==CL.base){
+      const r=await rpc("bk_login",{p_id:CL.key,p_hash:CL.hash});
+      if(r.ok&&CL.on&&!CL.busy&&!CL.timer&&!isDirty(CL.key)){
+        DB=r.data||{months:{}};normDB();CL.base=r.updated_at;
+        try{localStorage.setItem(DBKEY,JSON.stringify(DB))}catch(e){}
+        render();setStatus("ok","Data diperbarui dari perangkat lain \u2713 "+hhmm());
+      }
+    }else if($("syncst").className.indexOf("err")>=0)setStatus("ok","Tersinkron ke cloud \u2713 "+hhmm());
+  }catch(e){setStatus("err","Offline. Perubahan disimpan di perangkat ini dan disinkronkan nanti.")}
+}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)pull()});
+function startPoll(){if(CL.poll)clearInterval(CL.poll);CL.poll=setInterval(pull,45000)}
+function authLost(){doLogout("Password akun ini sudah diganti di perangkat lain. Silakan masuk lagi dengan password baru.",true)}
+
+/* ---------- masuk / keluar ---------- */
 function setAcct(){
   $("acname").textContent=ACC;
-  $("acmail").textContent="Akun ID & Password";
+  $("acmail").textContent=CL.on?"Akun cloud (tersinkron lintas perangkat)":"Akun ID & Password";
+  $("syncbtn").hidden=!CL.on;
 }
 function startApp(){
   month=ymd(now).slice(0,7);$("mon").value=month;
@@ -961,24 +1171,118 @@ function enterAccount(id){
   setAcct();setStatus("ok","Tersimpan di browser ini (akun "+id+")");
   startApp();
 }
+function enterCloud(key,disp,hash,data,base){
+  CL.on=true;CL.key=key;CL.hash=hash;CL.base=base||"";
+  ACC=disp;DBKEY=cKey(key);
+  DB=data||{months:{}};
+  const changed=normDB();
+  try{localStorage.setItem(DBKEY,JSON.stringify(DB))}catch(e){}
+  try{sessionStorage.setItem("bikimao-session",JSON.stringify({cloud:1,key,disp,hash}))}catch(e){}
+  rememberId(disp);
+  setAcct();setStatus("ok","Tersinkron ke cloud \u2713 "+hhmm());
+  startApp();startPoll();
+  if(changed||!base)save();
+}
+async function registerCloud(id,pw,data){
+  const salt=newSalt(),hash=await hashPw(pw,salt,ITER),code=newCode(),rs=newSalt(),rh=await hashPw(normCode(code),rs,ITER);
+  const r=await rpc("bk_register",{p_id:id,p_salt:salt,p_iter:ITER,p_hash:hash,p_rec_salt:rs,p_rec_iter:ITER,p_rec_hash:rh,p_data:data});
+  if(!r.ok)return r;
+  return{ok:true,code,key:idKey(id),disp:cleanId(id),hash,data,base:r.updated_at};
+}
+let pending=null;
+function showRecovery(res){
+  pending=res;$("rcode").value=res.code;$("rok").checked=false;$("rgo2").disabled=true;
+  lmode("rec");
+}
+$("rok").onchange=()=>{$("rgo2").disabled=!$("rok").checked};
+$("rcopy").onclick=async()=>{say((await copyText($("rcode").value,$("rcode")))?"Kode pemulihan disalin. Simpan di tempat aman.":"Kode sudah dipilih. Tekan dan tahan lalu pilih Salin (Copy).",false,true)};
+$("rgo2").onclick=()=>{
+  if(!pending||!$("rok").checked)return;
+  const p=pending;pending=null;$("rcode").value="";say("");
+  enterCloud(p.key,p.disp,p.hash,p.data,p.base);
+};
+async function cloudLoginFlow(id,pw){
+  const p=await rpc("bk_params",{p_id:id});
+  const h=await hashPw(pw,p.salt,p.iter);
+  const r=await rpc("bk_login",{p_id:id,p_hash:h});
+  if(r.ok){
+    const key=idKey(id);let data=r.data||{months:{}},push=false;
+    const c=readCache(key);
+    if(c&&isDirty(key)){data=mergeDB(c,data);push=true}
+    enterCloud(key,r.display_id,h,data,r.updated_at);
+    if(push)save();
+    return true;
+  }
+  /* akun lokal lama: pindahkan ke cloud bila password lokal cocok */
+  const lk=findKey(getAcc(),id),la=lk?getAcc()[lk]:null;
+  if(la&&await hashPw(pw,la.salt,la.iter)===la.hash){
+    let ld=null;try{ld=JSON.parse(localStorage.getItem("amplop-u-"+lk)||"null")}catch(e){}
+    const res=await registerCloud(lk,pw,ld||{months:{},wishlist:[],cleanV:1,savedAt:Date.now()});
+    if(res.ok){showRecovery(res);return true}
+  }
+  say("ID Akun atau Password salah.",true);
+  return false;
+}
+async function doLogout(msg,skipSync){
+  if(CL.on){
+    if(CL.poll){clearInterval(CL.poll);CL.poll=null}
+    clearTimeout(CL.timer);CL.timer=null;
+    if(!skipSync){try{await syncNow()}catch(e){}}
+  }
+  CL.on=false;CL.key="";CL.hash="";CL.base="";CL.busy=false;CL.dirty=false;
+  ACC="";DB={months:{}};DBKEY="";
+  try{sessionStorage.removeItem("bikimao-session")}catch(e){}
+  $("shbox").hidden=true;
+  ["lid","lpw","rid","rpw","rpw2","pid","pcode","pnw","pnw2"].forEach(i=>$(i).value="");
+  lmode("in");
+  try{history.replaceState(null,"",location.pathname)}catch(e){}
+  document.body.classList.add("locked");
+  if(msg)say(msg,true);
+}
+$("logout").onclick=()=>doLogout();
+$("syncbtn").onclick=async()=>{setStatus("busy","Menyinkronkan\u2026");if(isDirty(CL.key)||CL.timer){clearTimeout(CL.timer);CL.timer=null;await syncNow()}else{await pull();if($("syncst").className.indexOf("err")<0)setStatus("ok","Tersinkron ke cloud \u2713 "+hhmm())}};
+
+/* ---------- layar masuk ---------- */
 function lmode(m){
   $("fin").hidden=m!=="in";$("lrow").hidden=m!=="in";
-  $("fup").hidden=m!=="up";$("fpw").hidden=m!=="pw";$("fid").hidden=m!=="id";
+  $("fup").hidden=m!=="up";$("fpw").hidden=m!=="pw";$("fid").hidden=m!=="id";$("frec").hidden=m!=="rec";
+  $("ltabs").hidden=m==="rec";
   $("ltabIn").setAttribute("aria-pressed",String(m==="in"));
   $("ltabUp").setAttribute("aria-pressed",String(m==="up"));
   say("");
   if(m==="pw")resetPw();
   if(m==="id"){$("qid").value="";renderIds()}
 }
-/* lupa password: cukup dengan ID Akun yang tersimpan di browser ini */
 let pwKey="";
-function resetPw(){pwKey="";$("pstep2").hidden=true;$("pnw").value="";$("pnw2").value="";$("pgo").textContent="Cari Akun"}
+function resetPw(){
+  pwKey="";$("pnw").value="";$("pnw2").value="";$("pcode").value="";
+  $("pcodewrap").hidden=!CLOUD;$("pstep2").hidden=!CLOUD;
+  $("pgo").textContent=CLOUD?"Simpan Password Baru":"Cari Akun";
+}
 $("pid").oninput=()=>{if(pwKey){resetPw();say("")}};
 $("lfpw").onclick=()=>{const v=$("lid").value;lmode("pw");$("pid").value=v};
 $("pback").onclick=()=>lmode("in");
 $("fpw").onsubmit=async e=>{
   e.preventDefault();
   const btn=$("pgo");
+  if(CLOUD){
+    const id=cleanId($("pid").value),code=normCode($("pcode").value),p1=$("pnw").value,p2=$("pnw2").value;
+    if(!id)return say("ID Akun belum diisi.",true);
+    if(!code)return say("Kode Pemulihan belum diisi. Kode ini ditampilkan sekali saat akun dibuat.",true);
+    if(!p1)return say("Password baru belum diisi.",true);
+    if(p1.length<6)return say("Password baru minimal 6 karakter (sekarang baru "+p1.length+").",true);
+    if(p1!==p2)return say("Konfirmasi Password Baru tidak sama dengan Password Baru.",true);
+    btn.disabled=true;say("Memproses\u2026");
+    try{
+      const p=await rpc("bk_params",{p_id:id});
+      const rh=await hashPw(code,p.rec_salt,p.rec_iter);
+      const salt=newSalt(),hash=await hashPw(p1,salt,ITER);
+      const r=await rpc("bk_reset",{p_id:id,p_rec_hash:rh,p_salt:salt,p_iter:ITER,p_hash:hash});
+      if(r.ok){lmode("in");$("lid").value=id;$("lpw").value="";say('Password akun "'+id+'" berhasil diperbarui di cloud. Masuk dari perangkat mana pun dengan password baru.',false,true);try{$("lpw").focus()}catch(e){}}
+      else say("ID Akun atau Kode Pemulihan salah.",true);
+    }catch(err){say(cloudErr(err),true)}
+    btn.disabled=false;return;
+  }
   if(!pwKey){
     const id=cleanId($("pid").value);
     if(!id)return say("ID Akun belum diisi.",true);
@@ -1005,19 +1309,20 @@ $("fpw").onsubmit=async e=>{
   }catch(err){say("Gagal memperbarui password: "+(err&&err.message||err),true)}
   btn.disabled=false;
 };
-/* lupa ID akun: daftar ID yang tersimpan di browser ini */
 function renderIds(){
-  const ids=Object.keys(getAcc()).sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()));
+  const ids=(CLOUD?knownIds():Object.keys(getAcc())).slice().sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()));
   const q=$("qid").value.trim().toLowerCase(),ul=$("idlist"),info=$("idinfo");
   ul.innerHTML="";
   if(!ids.length){
     $("qwrap").hidden=true;$("gotoup").hidden=false;
-    info.textContent="Belum ada akun di browser ini. Buka tab Buat Akun Baru untuk membuat akun pertama Anda.";
+    info.textContent=CLOUD
+      ?"Belum ada ID yang pernah dipakai di perangkat ini. Demi privasi, ID yang dibuat di perangkat lain tidak ditampilkan; masuk dari perangkat itu atau ingat ID Anda. Atau buat akun baru di tab Buat Akun Baru."
+      :"Belum ada akun di browser ini. Buka tab Buat Akun Baru untuk membuat akun pertama Anda.";
     return;
   }
   $("qwrap").hidden=false;$("gotoup").hidden=true;
   const list=ids.filter(i=>i.toLowerCase().indexOf(q)>=0);
-  info.textContent=list.length?list.length+" dari "+ids.length+" akun di browser ini.":"Tidak ada ID yang cocok dengan pencarian.";
+  info.textContent=list.length?list.length+" dari "+ids.length+(CLOUD?" ID yang pernah dipakai di perangkat ini. ID dari perangkat lain tidak ditampilkan demi privasi.":" akun di browser ini."):"Tidak ada ID yang cocok dengan pencarian.";
   list.forEach(id=>{
     const li=document.createElement("li");
     li.innerHTML='<span></span><button class="lsm" type="button">Gunakan ID Ini</button>';
@@ -1039,11 +1344,14 @@ $("fin").onsubmit=async e=>{
   if(!pw)return say("Password belum diisi.",true);
   btn.disabled=true;say("Memeriksa\u2026");
   try{
-    const acc=getAcc(),k=findKey(acc,id),a=k?acc[k]:null;
-    if(!a)say('ID Akun "'+id+'" tidak ditemukan di browser ini. Periksa ejaannya atau pilih Buat Akun Baru.',true);
-    else if(await hashPw(pw,a.salt,a.iter)!==a.hash)say("Password salah. Coba lagi.",true);
-    else{$("lpw").value="";say("");enterAccount(k)}
-  }catch(err){say("Gagal masuk: "+(err&&err.message||err),true)}
+    if(CLOUD){if(await cloudLoginFlow(id,pw)){$("lpw").value="";if(!pending)say("")}}
+    else{
+      const acc=getAcc(),k=findKey(acc,id),a=k?acc[k]:null;
+      if(!a)say('ID Akun "'+id+'" tidak ditemukan di browser ini. Periksa ejaannya atau pilih Buat Akun Baru.',true);
+      else if(await hashPw(pw,a.salt,a.iter)!==a.hash)say("Password salah. Coba lagi.",true);
+      else{$("lpw").value="";say("");enterAccount(k)}
+    }
+  }catch(err){say(CLOUD?cloudErr(err):"Gagal masuk: "+(err&&err.message||err),true)}
   btn.disabled=false;
 };
 $("fup").onsubmit=async e=>{
@@ -1055,6 +1363,26 @@ $("fup").onsubmit=async e=>{
   if(!p1)return say("Password belum diisi.",true);
   if(p1.length<6)return say("Password minimal 6 karakter (sekarang baru "+p1.length+").",true);
   if(p1!==p2)return say("Konfirmasi Password tidak sama dengan Password.",true);
+  if(CLOUD){
+    btn.disabled=true;say("Membuat akun di cloud\u2026");
+    try{
+      let init={months:{},wishlist:[],cleanV:1,savedAt:Date.now()},adopt=false;
+      try{
+        const old=localStorage.getItem("amplop-v2");
+        if(old&&confirm("Data lama dari versi sebelumnya ditemukan di browser ini. Pindahkan ke akun baru ini?")){init=JSON.parse(old);adopt=true}
+      }catch(e){}
+      const res=await registerCloud(id,p1,init);
+      if(res.ok){
+        if(adopt)try{localStorage.removeItem("amplop-v2")}catch(e){}
+        ["rpw","rpw2"].forEach(i=>$(i).value="");showRecovery(res);
+      }else if(res.err==="exists"){
+        lmode("in");$("lid").value=id;
+        say('ID Akun "'+id+'" sudah terdaftar. Masukkan password akun tersebut di tab Masuk, atau pilih ID lain di tab Buat Akun Baru.',true);
+        try{$("lpw").focus()}catch(e){}
+      }else say("Akun belum bisa dibuat ("+(res.err||"ditolak")+"). Periksa ID Akun lalu coba lagi.",true);
+    }catch(err){say(cloudErr(err),true)}
+    btn.disabled=false;return;
+  }
   const ex=findKey(getAcc(),id);
   if(ex){
     lmode("in");$("lid").value=ex;
@@ -1080,20 +1408,39 @@ $("fup").onsubmit=async e=>{
   }catch(err){say("Gagal membuat akun: "+(err&&err.message||err),true)}
   btn.disabled=false;
 };
-$("logout").onclick=()=>{
-  ACC="";DB={months:{}};DBKEY="";
-  try{sessionStorage.removeItem("bikimao-session")}catch(e){}
-  $("shbox").hidden=true;
-  ["lid","lpw","rid","rpw","rpw2"].forEach(i=>$(i).value="");
-  lmode("in");
-  try{history.replaceState(null,"",location.pathname)}catch(e){}
-  document.body.classList.add("locked");
-};
-function boot(){
-  $("lhint").textContent="Seluruh data disimpan dan dikelola lewat akun ID & Password yang dibuat di browser ini.";
+async function boot(){
+  const T=CLOUD?{
+    h:"Akun dan data keuangan tersinkronisasi lintas perangkat melalui cloud, dengan salinan cadangan di perangkat ini.",
+    n1:"Akun ID &amp; Password dan seluruh data keuangan tersimpan di cloud, sehingga bisa dipakai dan tersinkronisasi di semua perangkat (HP, tablet, PC). Setiap perubahan otomatis disinkronkan dan salinan cadangannya juga disimpan di perangkat ini. Password disimpan sebagai hash, bukan teks biasa.",
+    n2:"Masuk dengan ID &amp; Password yang sama dari perangkat mana pun. Jika dua perangkat mengubah data bersamaan, aplikasi menggabungkannya otomatis; penghapusan di satu perangkat bisa muncul kembali bila perangkat lain masih menyimpannya.",
+    n3:"Lupa password? Pakai <b>Lupa Password?</b> dengan ID Akun dan <b>Kode Pemulihan</b> yang ditampilkan sekali saat akun dibuat (simpan baik-baik); password baru berlaku di semua perangkat dan data tidak terhapus. <b>Lupa ID Akun?</b> hanya menampilkan ID yang pernah dipakai di perangkat ini, demi privasi."
+  }:{
+    h:"Cloud belum diaktifkan: akun dan data tersimpan di browser ini saja (lihat petunjuk di bagian atas script).",
+    n1:"Seluruh data disimpan dan dikelola lewat akun ID &amp; Password yang Anda buat di browser ini. Data tiap akun terpisah, tidak dikirim ke server mana pun, dan password disimpan sebagai hash, bukan teks biasa.",
+    n2:"Akun terikat pada browser dan perangkat ini. Akun tidak muncul di browser atau perangkat lain, dan menghapus data situs browser akan menghapus akun beserta datanya.",
+    n3:"Lupa password atau ID? Pakai <b>Lupa Password?</b> (cukup dengan ID Akun) atau <b>Lupa ID Akun?</b> (daftar ID yang tersimpan) di layar masuk. Pemulihan hanya berlaku untuk akun yang tersimpan di browser dan perangkat ini, dan data keuangan tidak terhapus saat password diganti. Karena itu siapa pun yang bisa membuka browser ini bisa memakainya, jadi hindari perangkat bersama."
+  };
+  $("lhint").textContent=T.h;$("nt1").innerHTML=T.n1;$("nt2").innerHTML=T.n2;$("nt3").innerHTML=T.n3;
   let sid="";
-  try{sid=sessionStorage.getItem("bikimao-session")||"";localStorage.removeItem("bikimao-mode")}catch(e){}
-  if(sid&&getAcc()[sid])enterAccount(sid);
+  try{sid=sessionStorage.getItem("bikimao-session")||""}catch(e){}
+  if(!sid)return;
+  if(CLOUD){
+    let s=null;try{s=sid.charAt(0)==="{"?JSON.parse(sid):null}catch(e){}
+    if(!s||!s.cloud)return;
+    try{
+      const r=await rpc("bk_login",{p_id:s.key,p_hash:s.hash});
+      if(r.ok){
+        let data=r.data||{months:{}},push=false;
+        const c=readCache(s.key);
+        if(c&&isDirty(s.key)){data=mergeDB(c,data);push=true}
+        enterCloud(s.key,r.display_id,s.hash,data,r.updated_at);
+        if(push)save();
+      }else{try{sessionStorage.removeItem("bikimao-session")}catch(e){}}
+    }catch(e){
+      const c=readCache(s.key);
+      if(c){enterCloud(s.key,s.disp,s.hash,c,"");setDirty(s.key,true);setStatus("err","Offline. Memakai data tersimpan di perangkat ini; akan disinkronkan saat online.");clearTimeout(CL.timer);CL.timer=setTimeout(()=>{CL.timer=null;syncNow()},15000)}
+    }
+  }else if(sid.charAt(0)!=="{"&&getAcc()[sid])enterAccount(sid);
 }
 boot();
 </script>
